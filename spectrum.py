@@ -165,10 +165,20 @@ class ModelModifier:
                 unfrozen_parameters[layer_type] = []
             unfrozen_parameters[layer_type].append((layer_name, info['snr']))
         top_layers_by_type = {}
+
         for layer_type, layers in unfrozen_parameters.items():
-            layers_sorted = sorted(layers, key=lambda x: x[1], reverse=True)
-            num_top_layers = int(len(layers) * top_percent / 100)
-            top_layers_by_type[layer_type] = [layer[0] for layer in layers_sorted[:num_top_layers]]
+            num_layers = len(layers)
+            num_select = int(num_layers * abs(top_percent) / 100)
+            if top_percent >= 0:
+                # For top layers, sort descending.
+                layers_sorted = sorted(layers, key=lambda x: x[1], reverse=True)
+                selected_layers = layers_sorted[:num_select]
+            else:
+                # For bottom layers, sort ascending.
+                layers_sorted = sorted(layers, key=lambda x: x[1])
+                selected_layers = layers_sorted[:num_select]
+            top_layers_by_type[layer_type] = [layer[0] for layer in selected_layers]
+
         # Modify the yaml_filename to include the input json name and top_percent
         json_file_base = os.path.splitext(os.path.basename(json_filename))[0]
         yaml_filename = f"{json_file_base}_unfrozenparameters_{top_percent}percent.yaml"
